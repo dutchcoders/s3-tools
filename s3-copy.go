@@ -5,18 +5,19 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/s3"
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
 // https://bugs.launchpad.net/goamz/+bug/1087338/
 // https://launchpadlibrarian.net/133464855/s3-keys-with-spaces.diff
-
 
 func getBucketWithURL(urlStr string) (*s3.Bucket, error) {
 	url, err := url.Parse(urlStr)
@@ -41,9 +42,54 @@ func getBucket(bucket string, access_key string, secret_key string) (*s3.Bucket,
 	return b, nil
 }
 
+type Excludes []string
+
+func (self *Excludes) String() string {
+	return fmt.Sprint(*self)
+}
+
+func (self *Excludes) Set(value string) error {
+	*self = append(*self, value)
+	return nil
+}
+
+func (self *Excludes) Match(value string) (bool, error) {
+	for _, exclude := range *self {
+		matched, err := filepath.Match(exclude, value)
+
+		if err != nil {
+			return false, err
+		}
+
+		if matched == true {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func main() {
-        threads := flag.Int("threads", "4", "number of threads, default: 4")
+	fmt.Println("S3-copy: fast copy between buckets and accounts.")
+	fmt.Println("")
+        fmt.Println("Made with <3 by DutchCoders (http://dutchcoders.io/)")
+	fmt.Println("----------------------------------------------------")
+
+	threads := flag.Int("threads", 4, "number of threads, default: 4")
+
+	var excludes Excludes
+	flag.Var(&excludes, "exclude", "exclude pattern, default: none")
 	flag.Parse()
+
+	if flag.Arg(0) == "" {
+		fmt.Println("Error: Source not set")
+		return
+	}
+
+	if flag.Arg(1) == "" {
+		fmt.Println("Error: Destination not set")
+		return
+	}
 
 	b, err := getBucketWithURL(flag.Arg(0))
 	if err != nil {
@@ -57,7 +103,7 @@ func main() {
 		return
 	}
 
-	sem := make(chan int, threads)
+	sem := make(chan int, *threads)
 
 	marker := ""
 
@@ -70,6 +116,11 @@ func main() {
 
 		for _, key := range result.Contents {
 			marker = key.Key
+
+			if match, err := excludes.Match(key.Key); match || err != nil {
+				log.Print(err.Error())
+				continue
+			}
 
 			sem <- 1
 
@@ -109,7 +160,7 @@ func main() {
 
 				if response.Header.Get("Etag") != eTag {
 					log.Print(errors.New("Signature doesnt match").Error())
-                                        return 
+					return
 				}
 
 			}(b, destination, key.Key)

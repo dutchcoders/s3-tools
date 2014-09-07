@@ -1,7 +1,7 @@
 s3-copy
 =======
 
-s3-copy will copy then contents Amazon s3 buckets from one account to another account. 
+s3-copy will copy then contents Amazon s3 buckets from one account to the same or another account. 
 
 ```
 go get github.com/goamz/goamz/aws
@@ -16,13 +16,13 @@ TODO
 ====
 
 * support other regions
+* support for paths
+* support for wildcards
+* add progress
 * add statistics (upload speed)
 * etc
 
 CONTRIBUTIONS
 ============
 
-Contributions are welcome.
-
-Contributions are welcome.
 Contributions are welcome.
