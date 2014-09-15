@@ -3,16 +3,14 @@ package main
 // Made with <3 by DutchCoders (dutchcoders.io)
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/goamz/goamz/aws"
 	"github.com/dutchcoders/goamz/s3"
 	"log"
-	"net/http"
 	"net/url"
 	"path/filepath"
-	"strconv"
+	"sync"
 	"runtime"
 	"time"
 )
@@ -74,14 +72,15 @@ func main() {
         maxProcs := runtime.NumCPU()
         runtime.GOMAXPROCS(maxProcs)
 
-	fmt.Println("S3-copy: fast copy between buckets and accounts.")
+	fmt.Println("S3-delete: fast bulk delete.")
 	fmt.Println("")
         fmt.Println("Made with <3 by DutchCoders (http://dutchcoders.io/)")
 	fmt.Println("----------------------------------------------------")
 
-	threads := flag.Int("threads", 4, "number of threads, default: 4")
+	threads := flag.Int("threads", 20, "number of threads, default: 20")
 
 	var excludes Excludes
+
 	flag.Var(&excludes, "exclude", "exclude pattern, default: none")
 	flag.Parse()
 
@@ -90,18 +89,7 @@ func main() {
 		return
 	}
 
-	if flag.Arg(1) == "" {
-		fmt.Println("Error: Destination not set")
-		return
-	}
-
 	b, err := getBucketWithURL(flag.Arg(0))
-	if err != nil {
-		log.Panic(err.Error())
-		return
-	}
-
-	destination, err := getBucketWithURL(flag.Arg(1))
 	if err != nil {
 		log.Panic(err.Error())
 		return
@@ -120,6 +108,7 @@ func main() {
 			return
 		}
 
+
 		for _, key := range result.Contents {
 			if match, err := excludes.Match(key.Key); match || err != nil {
 				log.Print(err.Error())
@@ -130,47 +119,22 @@ func main() {
 
 			sem <- 1
 
-			go func(source *s3.Bucket, destination *s3.Bucket, path string) {
 
-				log.Printf("Copying %s", path)
+			go func(source *s3.Bucket, path string) {
+
+				log.Printf("Deleting %s", path)
 
 				defer func() {
                                         wg.Done()
 					<-sem
 				}()
 
-				rc, err := source.GetResponse(path)
+				err := source.Del(path)
 				if err != nil {
 					log.Print(err.Error())
 					return
 				}
-
-				defer rc.Body.Close()
-
-				contentType := rc.Header.Get("Content-Type")
-				eTag := rc.Header.Get("Etag")
-				contentLength, err := strconv.ParseInt(rc.Header.Get("Content-Length"), 10, 0)
-
-				options := s3.Options{}
-
-				if err = destination.PutReader(path, rc.Body, contentLength, contentType, s3.PublicRead, options); err != nil {
-					log.Print(err)
-					return
-				}
-
-				var response *http.Response
-
-				if response, err = destination.Head(path, nil); err != nil {
-					log.Print(err)
-					return
-				}
-
-				if response.Header.Get("Etag") != eTag {
-					log.Print(errors.New("Signature doesnt match").Error())
-					return
-				}
-
-			}(b, destination, key.Key)
+			}(b, key.Key)
 		}
 
 		if !result.IsTruncated {

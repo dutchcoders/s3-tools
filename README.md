@@ -1,14 +1,32 @@
+s3-tools
+=======
+
+Collection of multiple s3 tools
+
 s3-copy
 =======
 
-s3-copy will copy then contents Amazon s3 buckets from one account to the same or another account. 
+s3-copy will copy the content of Amazon S3 buckets from one account to the same or another account. 
 
 ```
 go get github.com/goamz/goamz/aws
 go get github.com/goamz/goamz/s3
 
-go run copy.go s3://ACCESS_KEY:SECRET_KEY@source s3://ACCESS_KEY:SECRET_KEY@destination
+go run s3-copy.go s3://ACCESS_KEY:SECRET_KEY@source s3://ACCESS_KEY:SECRET_KEY@destination
 ```
+
+s3-delete
+=======
+
+s3-delete will bulk delete the contents of an Amazon S3 bucket
+
+```
+go get github.com/goamz/goamz/aws
+go get github.com/goamz/goamz/s3
+
+go run s3-delete.go s3://ACCESS_KEY:SECRET_KEY@source
+```
+
 
 If your password contains special characters, you need to url encode them. For example / will be %2F.
 
