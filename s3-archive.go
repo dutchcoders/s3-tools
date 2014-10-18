@@ -177,8 +177,6 @@ func main() {
 	flag.Parse()
 
 	basepath = flag.Arg(0)
-        print (flag.Arg(0))
-        print (flag.Arg(1))
 
 	if basepath == "" {
                 fmt.Println("Usage:")
