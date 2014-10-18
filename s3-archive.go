@@ -26,13 +26,13 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	_ "encoding/hex"
-        "hash"
-        "encoding/hex"
+	"errors"
 	"flag"
+	"github.com/dutchcoders/goamz/s3"
 	"github.com/goamz/goamz/aws"
-        "github.com/dutchcoders/goamz/s3"
-        "errors"
+	"hash"
 	"io"
 	"log"
 	"mime"
@@ -68,23 +68,22 @@ func getBucket() (*s3.Bucket, error) {
 
 type md5reader struct {
 	io.Reader
-        hasher hash.Hash 
+	hasher hash.Hash
 }
 
-func (r *md5reader)Read(p []byte) (n int, err error) {
-    n, err = r.Reader.Read(p)
-    r.hasher.Write(p[:n])
-    return
+func (r *md5reader) Read(p []byte) (n int, err error) {
+	n, err = r.Reader.Read(p)
+	r.hasher.Write(p[:n])
+	return
 }
 
 func (r *md5reader) Hash() string {
-    return (hex.EncodeToString(r.hasher.Sum(nil)))
+	return (hex.EncodeToString(r.hasher.Sum(nil)))
 }
 
-
-func MD5Reader(reader io.Reader) * md5reader {
+func MD5Reader(reader io.Reader) *md5reader {
 	hasher := md5.New()
-        return &md5reader{reader, hasher}
+	return &md5reader{reader, hasher}
 }
 
 func walk(path string, f os.FileInfo, err error) error {
@@ -103,7 +102,7 @@ func walk(path string, f os.FileInfo, err error) error {
 	// var err error
 
 	// upload
-        file, err := os.Open(path)
+	file, err := os.Open(path)
 
 	defer file.Close()
 
@@ -138,17 +137,17 @@ func walk(path string, f os.FileInfo, err error) error {
 		return err
 	}
 
-        reader := MD5Reader(file)
-        resp, err := b.PutReaderWithResponse(key, reader, contentLength, contentType, s3.Private, s3.Options{})
+	reader := MD5Reader(file)
+	resp, err := b.PutReaderWithResponse(key, reader, contentLength, contentType, s3.Private, s3.Options{})
 
 	if err != nil {
 		log.Print(err.Error())
 		return err
 	}
 
-        if (resp.Header["Etag"][0][1:33] != reader.Hash()) {
-            return errors.New("Invalid hash")
-        }
+	if resp.Header["Etag"][0][1:33] != reader.Hash() {
+		return errors.New("Invalid hash")
+	}
 
 	if !move {
 		return nil
@@ -167,15 +166,15 @@ var destination string
 var move bool = false
 
 func main() {
-    	fmt.Println("S3-archive: archive folders to S3.")
+	fmt.Println("S3-archive: archive folders to S3.")
 	fmt.Println("")
-        fmt.Println("Usage:")
-        fmt.Println("go run s3-archive.go --destination=data --move=false /tmp/")
+	fmt.Println("Usage:")
+	fmt.Println("go run s3-archive.go --destination=data --move=false /tmp/")
 	fmt.Println("")
-        fmt.Println("Made with <3 by DutchCoders (http://dutchcoders.io/)")
+	fmt.Println("Made with <3 by DutchCoders (http://dutchcoders.io/)")
 	fmt.Println("----------------------------------------------------")
 
-        basepath = flag.Arg(0)
+	basepath = flag.Arg(0)
 
 	if basepath == "" {
 		log.Panic("Path not set")

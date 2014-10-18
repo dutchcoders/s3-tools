@@ -27,6 +27,22 @@ go get github.com/goamz/goamz/s3
 go run s3-delete.go s3://ACCESS_KEY:SECRET_KEY@source
 ```
 
+s3-archive
+=======
+
+s3-archive will archive files older then 1 month to Amazon S3 bucket with optional move
+
+```
+go get github.com/goamz/goamz/aws
+go get github.com/goamz/goamz/s3
+
+export AWS_ACCESS_KEY={AWS_ACCESS_KEY}
+export AWS_SECRET_KEY={AWS_SECRET_KEY}
+export BUCKET={BUCKET}
+
+go run s3-archive --destination=dest --move=false /tmp/
+```
+
 
 If your password contains special characters, you need to url encode them. For example / will be %2F.
 
