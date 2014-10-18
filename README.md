@@ -3,6 +3,8 @@ s3-tools
 
 Collection of multiple s3 tools
 
+[![Build Status](https://travis-ci.org/dutchcoders/s3-tools.svg?branch=master)](https://travis-ci.org/dutchcoders/s3-tools)
+
 s3-copy
 =======
 
