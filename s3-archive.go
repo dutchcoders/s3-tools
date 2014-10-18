@@ -36,6 +36,7 @@ import (
 	"io"
 	"log"
 	"mime"
+        "fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -168,21 +169,23 @@ var move bool = false
 func main() {
 	fmt.Println("S3-archive: archive folders to S3.")
 	fmt.Println("")
-	fmt.Println("Usage:")
-	fmt.Println("go run s3-archive.go --destination=data --move=false /tmp/")
-	fmt.Println("")
 	fmt.Println("Made with <3 by DutchCoders (http://dutchcoders.io/)")
 	fmt.Println("----------------------------------------------------")
-
-	basepath = flag.Arg(0)
-
-	if basepath == "" {
-		log.Panic("Path not set")
-	}
 
 	flag.StringVar(&destination, "destination", "", "")
 	flag.BoolVar(&move, "move", false, "")
 	flag.Parse()
+
+	basepath = flag.Arg(0)
+        print (flag.Arg(0))
+        print (flag.Arg(1))
+
+	if basepath == "" {
+                fmt.Println("Usage:")
+                fmt.Println("go run s3-archive.go --destination=data --move=false /tmp/")
+                fmt.Println("")
+		log.Panic("Path not set")
+	}
 
 	filepath.Walk(basepath, walk)
 }
